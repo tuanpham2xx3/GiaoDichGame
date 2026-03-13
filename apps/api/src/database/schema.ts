@@ -381,3 +381,33 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
     references: [permissions.id],
   }),
 }));
+
+export const gamesRelations = relations(games, ({ many }) => ({
+  listings: many(listings),
+}));
+
+export const listingsRelations = relations(listings, ({ one, many }) => ({
+  seller: one(users, { fields: [listings.sellerId], references: [users.id] }),
+  game: one(games, { fields: [listings.gameId], references: [games.id] }),
+  images: many(listingImages),
+  pins: many(listingPins),
+}));
+
+export const listingImagesRelations = relations(listingImages, ({ one }) => ({
+  listing: one(listings, { fields: [listingImages.listingId], references: [listings.id] }),
+}));
+
+export const listingPinsRelations = relations(listingPins, ({ one }) => ({
+  listing: one(listings, { fields: [listingPins.listingId], references: [listings.id] }),
+}));
+
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  listing: one(listings, { fields: [orders.listingId], references: [listings.id] }),
+  buyer: one(users, { fields: [orders.buyerId], references: [users.id] }),
+  seller: one(users, { fields: [orders.sellerId], references: [users.id] }),
+  delivery: one(orderDeliveries),
+}));
+
+export const orderDeliveriesRelations = relations(orderDeliveries, ({ one }) => ({
+  order: one(orders, { fields: [orderDeliveries.orderId], references: [orders.id] }),
+}));

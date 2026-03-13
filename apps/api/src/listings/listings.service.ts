@@ -90,11 +90,6 @@ export class ListingsService {
       orderBy,
       limit,
       offset,
-      with: {
-        listingImages: {
-          orderBy: [asc(listingImages.order)],
-        },
-      },
     });
 
     const itemsWithGame = await Promise.all(
@@ -135,16 +130,18 @@ export class ListingsService {
   async getListingById(id: number) {
     const listing = await this.db.query.listings.findFirst({
       where: eq(listings.id, id),
-      with: {
-        listingImages: {
-          orderBy: [asc(listingImages.order)],
-        },
-      },
     });
 
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
+
+    // Get images separately
+    const images = await this.db
+      .select()
+      .from(listingImages)
+      .where(eq(listingImages.listingId, id))
+      .orderBy(asc(listingImages.order));
 
     await this.db
       .update(listings)
@@ -162,6 +159,7 @@ export class ListingsService {
 
     return {
       ...listing,
+      images: images.map(img => ({ id: img.id, url: img.url, order: img.order })),
       seller: seller ? {
         id: Number(seller.id),
         username: seller.username,
@@ -240,16 +238,10 @@ export class ListingsService {
         sql`status != 'DELETED'`
       ),
       orderBy: [desc(listings.createdAt)],
-      with: {
-        listingImages: {
-          orderBy: [asc(listingImages.order)],
-        },
-      },
     });
 
     return items.map((item: typeof items[number]) => ({
       ...item,
-      listingImages: item.listingImages,
     }));
   }
 
@@ -261,12 +253,6 @@ export class ListingsService {
       ),
       orderBy: [desc(listings.isPinned), desc(listings.createdAt)],
       limit,
-      with: {
-        listingImages: {
-          orderBy: [asc(listingImages.order)],
-          limit: 1,
-        },
-      },
     });
 
     return items;

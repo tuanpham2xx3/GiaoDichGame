@@ -180,42 +180,66 @@ async function seed() {
 
   // ---- 1. Insert Roles ----
   console.log('📌 Inserting roles...');
-  const insertedRoles = await db
-    .insert(roles)
+  let insertedRoles = await db
+    .insert(schema.roles)
     .values(SYSTEM_ROLES.map((r) => ({ ...r })))
-    .onConflictDoNothing({ target: roles.name })
+    .onConflictDoNothing({ target: schema.roles.name })
     .returning();
 
-  console.log(`   ✓ ${insertedRoles.length} roles inserted (or already exist)`);
+  // If no new roles inserted, fetch existing ones
+  if (insertedRoles.length === 0) {
+    insertedRoles = await db.select().from(schema.roles);
+  }
+
+  console.log(`   ✓ ${insertedRoles.length} roles available`);
 
   // ---- 2. Insert Permissions ----
   console.log('📌 Inserting permissions...');
-  const insertedPermissions = await db
-    .insert(permissions)
+  let insertedPermissions = await db
+    .insert(schema.permissions)
     .values(SYSTEM_PERMISSIONS.map((p) => ({ ...p })))
-    .onConflictDoNothing({ target: permissions.key })
+    .onConflictDoNothing({ target: schema.permissions.key })
     .returning();
 
-  console.log(`   ✓ ${insertedPermissions.length} permissions inserted (or already exist)`);
+  // If no new permissions inserted, fetch existing ones
+  if (insertedPermissions.length === 0) {
+    insertedPermissions = await db.select().from(schema.permissions);
+  }
+
+  console.log(`   ✓ ${insertedPermissions.length} permissions available`);
+
+  // Get inserted roles and permissions
+  const allRoles = insertedRoles;
+  const allPermissions = insertedPermissions;
 
   // ---- 3. Assign permissions to roles ----
   console.log('📌 Assigning permissions to roles...');
-
-    if (modPermissionIds.length > 0) {
-      await db
-        .insert(rolePermissions)
-        .values(modPermissionIds.map((permId) => ({ roleId: modRole.id, permissionId: permId })))
-        .onConflictDoNothing();
-      console.log(`   ✓ ${modPermissionIds.length} permissions assigned to Mod`);
-    }
-  } else {
-    console.log('   ⚠ Mod role not found');
-  }
 
   const userRole = allRoles.find((r) => r.name === 'USER');
   const modRole = allRoles.find((r) => r.name === 'Mod');
   if (!userRole || !modRole) {
     throw new Error('USER or Mod role not found after insert!');
+  }
+
+  // Create permMap for easy lookup
+  const permMap: Record<string, number> = {};
+  allPermissions.forEach((p) => { permMap[p.key] = p.id; });
+
+  // Create roleMap for easy lookup
+  const roleMap: Record<string, typeof allRoles[number]> = {};
+  allRoles.forEach((r) => { roleMap[r.name] = r; });
+
+  // Assign permissions to Mod role
+  const modPermissionIds = MOD_PERMISSION_KEYS
+    .map((key) => permMap[key])
+    .filter((id): id is number => id !== undefined);
+
+  if (modPermissionIds.length > 0) {
+    await db
+      .insert(schema.rolePermissions)
+      .values(modPermissionIds.map((permId) => ({ roleId: modRole.id, permissionId: permId })))
+      .onConflictDoNothing();
+    console.log(`   ✓ ${modPermissionIds.length} permissions assigned to Mod`);
   }
 
   // Assign profile:edit to USER role
@@ -225,7 +249,7 @@ async function seed() {
 
   if (userPermissionIds.length > 0) {
     await db
-      .insert(rolePermissions)
+      .insert(schema.rolePermissions)
       .values(userPermissionIds.map((permId) => ({ roleId: userRole.id, permissionId: permId })))
       .onConflictDoNothing();
     console.log(`   ✓ ${userPermissionIds.length} permissions assigned to USER`);
@@ -241,7 +265,7 @@ async function seed() {
 
     if (sellerPermissionIds.length > 0) {
       await db
-        .insert(rolePermissions)
+        .insert(schema.rolePermissions)
         .values(sellerPermissionIds.map((permId) => ({ roleId: sellerRole.id, permissionId: permId })))
         .onConflictDoNothing();
       console.log(`   ✓ ${sellerPermissionIds.length} permissions assigned to SELLER`);
@@ -253,9 +277,9 @@ async function seed() {
   // ---- 6. Insert Sample Games ----
   console.log('📌 Inserting sample games...');
   const insertedGames = await db
-    .insert(games)
+    .insert(schema.games)
     .values(SAMPLE_GAMES.map((g) => ({ ...g })))
-    .onConflictDoNothing({ target: games.slug })
+    .onConflictDoNothing({ target: schema.games.slug })
     .returning();
 
   console.log(`   ✓ ${insertedGames.length} games inserted (or already exist)`);
@@ -287,7 +311,7 @@ async function seed() {
     // Assign SELLER role
     if (sellerRole) {
       await db
-        .insert(userRoles)
+        .insert(schema.userRoles)
         .values({ userId: sellerUserId, roleId: sellerRole.id })
         .onConflictDoNothing();
       console.log(`   ✓ SELLER role assigned to user`);
@@ -358,7 +382,7 @@ async function seed() {
     ];
 
     await db
-      .insert(listings)
+      .insert(schema.listings)
       .values(sampleListings)
       .onConflictDoNothing();
 
