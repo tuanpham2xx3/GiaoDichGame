@@ -34,9 +34,21 @@ export function Header() {
             Trang chủ
           </Link>
           {user && (
-            <Link href="/wallet" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">
-              Ví của tôi
-            </Link>
+            <>
+              <Link href="/wallet" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">
+                Ví của tôi
+              </Link>
+              {user.permissions?.includes('listing:create') && (
+                <Link href="/sell" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">
+                  Đăng bài
+                </Link>
+              )}
+              {user.permissions?.includes('listing:create') && (
+                <Link href="/my-listings" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">
+                  Bài của tôi
+                </Link>
+              )}
+            </>
           )}
         </nav>
 

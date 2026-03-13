@@ -8,6 +8,9 @@ import { HealthController } from './health/health.controller';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
+import { GamesModule } from './games/games.module';
+import { ListingsModule } from './listings/listings.module';
+import { UploadModule } from './common/upload.module';
 
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import { WalletModule } from './wallet/wallet.module';
     AuthModule,
     UsersModule,
     WalletModule,
+    GamesModule,
+    ListingsModule,
+    UploadModule,
   ],
   controllers: [HealthController],
 })
