@@ -81,6 +81,21 @@ export const userRoles = pgTable(
 );
 
 // ================================================================
+// REFRESH TOKENS
+// ================================================================
+
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  userId: bigint('user_id', { mode: 'number' })
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  tokenHash: varchar('token_hash', { length: 255 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  revokedAt: timestamp('revoked_at'),
+});
+
+// ================================================================
 // WALLET – Ledger (the heart of the system)
 // ================================================================
 

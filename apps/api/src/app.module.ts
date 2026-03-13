@@ -1,26 +1,32 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TerminusModule } from '@nestjs/terminus';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthController } from './health/health.controller';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
-    // Load .env file; available globally across all modules
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
-
-    // Database module (Drizzle + PostgreSQL)
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 10,  // global default
+      },
+    ]),
     DatabaseModule,
-
-    // BullMQ + Redis queue module
     QueueModule,
-
-    // Health check endpoint
     TerminusModule,
+    AuthModule,
+    UsersModule,
+    WalletModule,
   ],
   controllers: [HealthController],
 })

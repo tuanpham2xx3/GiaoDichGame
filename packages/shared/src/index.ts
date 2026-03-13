@@ -1,6 +1,6 @@
 // Re-export all shared types and constants
-export * from './types/user.js';
-export * from './types/wallet.js';
-export * from './types/listing.js';
-export * from './types/order.js';
-export * from './constants/queue.js';
+export * from './types/user';
+export * from './types/wallet';
+export * from './types/listing';
+export * from './types/order';
+export * from './constants/queue';
