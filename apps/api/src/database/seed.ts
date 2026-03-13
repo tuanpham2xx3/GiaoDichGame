@@ -94,11 +94,19 @@ const MOD_PERMISSION_KEYS = [
   'stats:view',
 ];
 
-// Permissions mặc định cho USER (khi đăng ký)
+// Permissions mặc định cho USER (khi đăng ký) - bao gồm cả BUYER và SELLER
 const USER_DEFAULT_PERMISSION_KEYS = [
   'profile:edit',
+  // Order - Buying
   'order:buy',
   'order:view_own',
+  // Order - Selling  
+  'order:deliver',
+  // Listing - Selling
+  'listing:create',
+  'listing:edit',
+  'listing:delete',
+  'listing:pin',
 ];
 
 // Permissions cho SELLER

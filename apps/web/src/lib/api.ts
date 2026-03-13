@@ -186,3 +186,100 @@ export const listingsApi = {
     return data;
   },
 };
+
+// ============================================================
+// Orders API
+// ============================================================
+
+export interface Order {
+  id: number;
+  listingId: number;
+  buyerId: number;
+  sellerId: number;
+  amount: string;
+  status: 'PENDING' | 'LOCKED' | 'DELIVERED' | 'COMPLETED' | 'DISPUTED' | 'CANCELLED';
+  deliveredAt: string | null;
+  completedAt: string | null;
+  autoCompleteAt: string | null;
+  timeline?: Array<{
+    status: string;
+    note: string;
+    createdAt: string;
+  }>;
+  isBuyer?: boolean;
+  canDeliver?: boolean;
+  canConfirm?: boolean;
+}
+
+export interface OrdersResponse {
+  items: Order[];
+}
+
+export const ordersApi = {
+  getOrders: async () => {
+    const { data } = await api.get<OrdersResponse>('/v1/orders');
+    return data;
+  },
+  getOrder: async (id: number) => {
+    const { data } = await api.get<Order>(`/v1/orders/${id}`);
+    return data;
+  },
+  createOrder: async (listingId: number) => {
+    const { data } = await api.post<Order>('/v1/orders', { listing_id: listingId });
+    return data;
+  },
+  deliverOrder: async (id: number, payload: { username?: string; password?: string; extra_info?: Record<string, unknown> }) => {
+    const { data } = await api.post<Order>(`/v1/orders/${id}/deliver`, payload);
+    return data;
+  },
+  confirmReceipt: async (id: number) => {
+    const { data } = await api.post<Order>(`/v1/orders/${id}/confirm`);
+    return data;
+  },
+  getGameInfo: async (id: number) => {
+    const { data } = await api.get<{ gameInfo: Record<string, unknown> }>(`/v1/orders/${id}/game-info`);
+    return data;
+  },
+};
+
+// ============================================================
+// Notifications API
+// ============================================================
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  content: string | null;
+  data: Record<string, unknown> | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  items: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export const notificationsApi = {
+  getNotifications: async (params?: { page?: number; limit?: number; unread_only?: boolean }) => {
+    const { data } = await api.get<NotificationsResponse>('/v1/notifications', { params });
+    return data;
+  },
+  getUnreadCount: async () => {
+    const { data } = await api.get<{ count: number }>('/v1/notifications/unread-count');
+    return data;
+  },
+  markAsRead: async (id: number) => {
+    const { data } = await api.post<Notification>(`/v1/notifications/${id}/read`);
+    return data;
+  },
+  markAllAsRead: async () => {
+    const { data } = await api.post('/v1/notifications/read-all');
+    return data;
+  },
+};

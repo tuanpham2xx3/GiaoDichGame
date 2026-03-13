@@ -358,6 +358,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   walletTransactions: many(walletTransactions),
   listings: many(listings),
   orders: many(orders),
+  notifications: many(notifications),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -406,8 +407,50 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   buyer: one(users, { fields: [orders.buyerId], references: [users.id] }),
   seller: one(users, { fields: [orders.sellerId], references: [users.id] }),
   delivery: one(orderDeliveries),
+  timeline: many(orderTimeline),
 }));
 
 export const orderDeliveriesRelations = relations(orderDeliveries, ({ one }) => ({
   order: one(orders, { fields: [orderDeliveries.orderId], references: [orders.id] }),
+}));
+
+export const ordersTimelineRelations = relations(orderTimeline, ({ one }) => ({
+  order: one(orders, { fields: [orderTimeline.orderId], references: [orders.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+// ================================================================
+// ORDER TIMELINE
+// ================================================================
+
+export const orderTimeline = pgTable('order_timeline', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  orderId: bigint('order_id', { mode: 'number' })
+    .notNull()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 20 }).notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// ================================================================
+// NOTIFICATIONS
+// ================================================================
+
+export const notifications = pgTable('notifications', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  userId: bigint('user_id', { mode: 'number' })
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 50 }).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  content: text('content'),
+  data: jsonb('data').$type<Record<string, unknown>>(),
+  isRead: boolean('is_read').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index('idx_notifications_user').on(t.userId, t.isRead),
 }));

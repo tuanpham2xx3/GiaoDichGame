@@ -2,15 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { listingsApi, Listing } from '@/lib/api';
+import { PurchaseModal } from '@/components/PurchaseModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 
 export default function ListingDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
   const id = Number(params.id);
+  
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -21,7 +31,41 @@ export default function ListingDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user && showPurchaseModal) {
+      loadBalance();
+    }
+  }, [user, showPurchaseModal]);
+
+  const loadBalance = async () => {
+    setLoadingBalance(true);
+    try {
+      const { data } = await api.get('/v1/wallet/balance');
+      setBalance(data.available || 0);
+    } catch (err) {
+      console.error('Failed to load balance:', err);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
+  const handleBuyClick = () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (listing && user.id === listing.sellerId) {
+      return; // Can't buy own listing
+    }
+    setShowPurchaseModal(true);
+  };
+
+  const handlePurchaseSuccess = (orderId: number) => {
+    setShowPurchaseModal(false);
+    router.push(`/orders/${orderId}`);
+  };
+
+  if (loading || loadingBalance) {
     return (
       <div className="min-h-screen bg-[#0f1118] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -39,6 +83,8 @@ export default function ListingDetailPage() {
       </div>
     );
   }
+
+  const isOwner = user && user.id === listing.sellerId;
 
   return (
     <div className="min-h-screen bg-[#0f1118] py-12 px-6">
@@ -124,9 +170,21 @@ export default function ListingDetailPage() {
                 </p>
               </div>
 
-              <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-lg transition-colors mb-3">
-                Mua ngay
-              </button>
+              {!isOwner ? (
+                <button 
+                  onClick={handleBuyClick}
+                  className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-lg transition-colors mb-3"
+                >
+                  Mua ngay
+                </button>
+              ) : (
+                <button 
+                  disabled
+                  className="w-full py-4 bg-gray-600 text-white font-bold rounded-xl text-lg mb-3 cursor-not-allowed"
+                >
+                  Đây là sản phẩm của bạn
+                </button>
+              )}
 
               <p className="text-center text-white/40 text-sm">
                 Bạn sẽ được bảo vệ bởi hệ thống Escrow
@@ -182,6 +240,15 @@ export default function ListingDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Purchase Modal */}
+        <PurchaseModal
+          isOpen={showPurchaseModal}
+          onClose={() => setShowPurchaseModal(false)}
+          listing={listing}
+          userBalance={balance}
+          onSuccess={handlePurchaseSuccess}
+        />
       </div>
     </div>
   );

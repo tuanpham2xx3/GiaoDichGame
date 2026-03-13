@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
 import { GamesModule } from './games/games.module';
 import { ListingsModule } from './listings/listings.module';
+import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { UploadModule } from './common/upload.module';
 
 @Module({
@@ -32,6 +34,8 @@ import { UploadModule } from './common/upload.module';
     WalletModule,
     GamesModule,
     ListingsModule,
+    OrdersModule,
+    NotificationsModule,
     UploadModule,
   ],
   controllers: [HealthController],
