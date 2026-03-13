@@ -14,7 +14,7 @@
 | POST | `/auth/login` | Đăng nhập → JWT | Public |
 | POST | `/auth/refresh` | Refresh access token | Refresh Token |
 | POST | `/auth/logout` | Revoke refresh token | User |
-| GET | `/auth/me` | Thông tin user + danh sách permissions hiện có | User |
+| GET | `/auth/me` | Thông tin user + permissions + roles | User |
 
 ---
 
@@ -23,7 +23,7 @@
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
 | GET | `/users/:id` | Xem profile công khai | Public |
-| PATCH | `/users/me` | Cập nhật profile | User |
+| PATCH | `/users/me` | Cập nhật profile | `profile:edit` |
 | GET | `/users/me/transactions` | Lịch sử Coin | User |
 | GET | `/users/me/listings` | Bài đăng của tôi | User |
 | GET | `/users/me/orders` | Đơn hàng của tôi | User |
@@ -39,15 +39,17 @@
 | POST | `/wallet/topup/bank` | Tạo yêu cầu nạp chuyển khoản | User |
 | POST | `/wallet/topup/webhook` | Callback từ payment gateway | System |
 | POST | `/wallet/withdraw` | Tạo yêu cầu rút Coin | User |
-| GET | `/wallet/insurance` | Số dư quỹ bảo hiểm | Seller |
-| POST | `/wallet/insurance/deposit` | Nạp vào quỹ bảo hiểm | Seller |
-| POST | `/wallet/insurance/withdraw` | Rút quỹ bảo hiểm | Seller |
+| GET | `/wallet/insurance` | Số dư quỹ bảo hiểm | `insurance:manage` |
+| POST | `/wallet/insurance/deposit` | Nạp vào quỹ bảo hiểm | `insurance:manage` |
+| POST | `/wallet/insurance/withdraw` | Rút quỹ bảo hiểm | `insurance:manage` |
 
 ### Admin Wallet
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| GET | `/admin/topup-requests` | Danh sách yêu cầu nạp TK | Admin |
-| PATCH | `/admin/topup-requests/:id/confirm` | Xác nhận nạp thủ công | Admin |
+| GET | `/admin/topup-requests` | Danh sách yêu cầu nạp TK | `topup:confirm` |
+| PATCH | `/admin/topup-requests/:id/confirm` | Xác nhận nạp thủ công | `topup:confirm` |
+| GET | `/admin/withdraw-requests` | Danh sách yêu cầu rút | `withdraw:approve` |
+| PATCH | `/admin/withdraw-requests/:id/approve` | Duyệt rút tiền | `withdraw:approve` |
 
 ---
 
@@ -57,10 +59,10 @@
 |---|---|---|---|
 | GET | `/games` | Danh sách game active | Public |
 | GET | `/games/:slug` | Chi tiết game + schema | Public |
-| POST | `/games` | Thêm game mới | Mod |
-| PATCH | `/games/:id` | Sửa game | Mod |
-| DELETE | `/games/:id` | Ẩn/xóa game | Mod |
-| PUT | `/games/:id/schema` | Cập nhật schema thuộc tính | Mod |
+| POST | `/games` | Thêm game mới | `game:manage` |
+| PATCH | `/games/:id` | Sửa game | `game:manage` |
+| DELETE | `/games/:id` | Ẩn/xóa game | `game:manage` |
+| PUT | `/games/:id/schema` | Cập nhật schema thuộc tính | `game:manage` |
 
 ---
 
@@ -70,10 +72,10 @@
 |---|---|---|---|
 | GET | `/listings` | Danh sách listings (filter, paginate) | Public |
 | GET | `/listings/:id` | Chi tiết listing | Public |
-| POST | `/listings` | Đăng bài bán | Seller |
-| PATCH | `/listings/:id` | Sửa bài (chỉ khi PUBLISHED) | Seller |
-| DELETE | `/listings/:id` | Xóa/ẩn bài | Seller |
-| POST | `/listings/:id/pin` | Mua Pin cho bài | Seller |
+| POST | `/listings` | Đăng bài bán | `listing:create` |
+| PATCH | `/listings/:id` | Sửa bài (chỉ khi PUBLISHED) | `listing:edit` |
+| DELETE | `/listings/:id` | Xóa/ẩn bài | `listing:delete` |
+| POST | `/listings/:id/pin` | Mua Pin cho bài | `listing:pin` |
 
 ---
 
@@ -81,11 +83,11 @@
 
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| POST | `/orders` | Tạo đơn mua hàng | Buyer |
-| GET | `/orders/:id` | Chi tiết đơn hàng | Buyer/Seller |
-| POST | `/orders/:id/deliver` | Seller giao thông tin | Seller |
-| POST | `/orders/:id/confirm` | Buyer xác nhận nhận hàng | Buyer |
-| GET | `/orders/:id/delivery` | Xem thông tin tài khoản game | Buyer |
+| POST | `/orders` | Tạo đơn mua hàng | `order:buy` |
+| GET | `/orders/:id` | Chi tiết đơn hàng | Buyer/Seller (chủ đơn) |
+| POST | `/orders/:id/deliver` | Seller giao thông tin | `order:deliver` |
+| POST | `/orders/:id/confirm` | Buyer xác nhận nhận hàng | `order:buy` |
+| GET | `/orders/:id/delivery` | Xem thông tin tài khoản game | Buyer (chỉ buyer đơn đó) |
 
 ---
 
@@ -93,13 +95,13 @@
 
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| POST | `/disputes` | Tạo ticket khiếu nại | Buyer |
-| GET | `/disputes/:id` | Chi tiết ticket | Buyer/Seller/Mod |
-| POST | `/disputes/:id/evidence` | Seller gửi bằng chứng | Seller |
-| POST | `/disputes/:id/messages` | Gửi tin nhắn chat | Buyer/Seller/Mod |
-| GET | `/disputes/:id/messages` | Lấy lịch sử chat | Buyer/Seller/Mod |
-| PATCH | `/disputes/:id/resolve` | Mod/Admin ra phán quyết | Mod/Admin |
-| GET | `/admin/disputes` | Danh sách tất cả disputes | Mod/Admin |
+| POST | `/disputes` | Tạo ticket khiếu nại | Buyer (chỉ buyer của đơn) |
+| GET | `/disputes/:id` | Chi tiết ticket | Buyer/Seller (liên quan) |
+| POST | `/disputes/:id/evidence` | Seller gửi bằng chứng | Seller (liên quan) |
+| POST | `/disputes/:id/messages` | Gửi tin nhắn chat | Buyer/Seller (liên quan) |
+| GET | `/disputes/:id/messages` | Lấy lịch sử chat | Buyer/Seller (liên quan) |
+| PATCH | `/disputes/:id/resolve` | Mod/Admin ra phán quyết | `dispute:resolve` |
+| GET | `/admin/disputes` | Danh sách tất cả disputes | `dispute:resolve` |
 
 ---
 
@@ -114,11 +116,11 @@
 ### Admin VIP/Pin
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| GET | `/admin/vip-packages` | Quản lý gói VIP | Admin |
-| POST | `/admin/vip-packages` | Tạo gói VIP | Admin |
-| PATCH | `/admin/vip-packages/:id` | Sửa gói VIP | Admin |
-| DELETE | `/admin/vip-packages/:id` | Xóa/ẩn gói VIP | Admin |
-| PUT | `/admin/pin-config` | Cập nhật giá Pin | Admin |
+| GET | `/admin/vip-packages` | Quản lý gói VIP | `vip:manage` |
+| POST | `/admin/vip-packages` | Tạo gói VIP | `vip:manage` |
+| PATCH | `/admin/vip-packages/:id` | Sửa gói VIP | `vip:manage` |
+| DELETE | `/admin/vip-packages/:id` | Xóa/ẩn gói VIP | `vip:manage` |
+| PUT | `/admin/pin-config` | Cấu hình giá Pin | `pin:manage` |
 
 ---
 
@@ -158,3 +160,21 @@
 - **Upload ảnh:** Dùng `multipart/form-data`, lưu S3/Cloudflare R2
 - **Mã hóa giao tiếp:** HTTPS bắt buộc (Nginx TLS termination)
 - **Rate limiting:** Áp dụng cho `/auth/login`, `/orders`, `/wallet/withdraw`
+
+---
+
+## Phụ lục: Default Permissions cho USER Role
+
+| Permission | Mô tả | Gán mặc định |
+|------------|-------|---------------|
+| `profile:edit` | Chỉnh sửa profile cá nhân | ✅ Có |
+| `order:buy` | Mua hàng | ✅ Có |
+| `order:view_own` | Xem đơn hàng của mình | ✅ Có |
+| `listing:create` | Đăng bài bán | ❌ Cần admin gán SELLER role |
+| `listing:edit` | Sửa bài đăng | ❌ Cần admin gán SELLER role |
+| `listing:delete` | Xóa bài đăng | ❌ Cần admin gán SELLER role |
+| `listing:pin` | Mua pin cho bài | ❌ Cần admin gán SELLER role |
+| `order:deliver` | Giao thông tin tài khoản game | ❌ Cần admin gán SELLER role |
+| `insurance:manage` | Quản lý quỹ bảo hiểm | ❌ Cần admin gán SELLER role |
+
+> **Lưu ý:** Khi đăng ký, user mới chỉ có quyền cơ bản (`profile:edit`, `order:buy`). Để có quyền bán hàng, admin cần gán role `SELLER` cho user qua API `/admin/users/:id/roles`
