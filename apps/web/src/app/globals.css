@@ -1,0 +1,33 @@
+/* ──────────────────────────────────────────────────────────
+   globals.css – GIAODICHGAME
+   ────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --color-bg: #0a0a14;
+  --color-surface: #12121f;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-accent-1: #6c63ff;
+  --color-accent-2: #ff6b6b;
+  --color-accent-gradient: linear-gradient(135deg, #6c63ff 0%, #a855f7 100%);
+  --color-text: #e8e8f0;
+  --color-text-muted: #8888a8;
+  --radius: 12px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
