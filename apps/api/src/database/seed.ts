@@ -80,7 +80,12 @@ const SYSTEM_PERMISSIONS = [
   { key: 'stats:view', description: 'Xem thống kê hệ thống' },
 ] as const;
 
-// Permissions gán cho Mod
+// Permissions gán cho USER (quyền cơ bản)
+const USER_PERMISSION_KEYS = [
+  'profile:edit',
+];
+
+// Permissions gán cho Mod (không bao gồm quyền quản trị hệ thống)
 const MOD_PERMISSION_KEYS = [
   'game:manage',
   'dispute:resolve',
@@ -193,21 +198,8 @@ async function seed() {
 
   console.log(`   ✓ ${insertedPermissions.length} permissions inserted (or already exist)`);
 
-  // ---- Fetch current state from DB ----
-  console.log('📌 Fetching roles and permissions...');
-  const allRoles = await db.select().from(roles);
-  const allPermissions = await db.select().from(permissions);
-
-  const roleMap = Object.fromEntries(allRoles.map((r) => [r.name, r]));
-  const permMap = Object.fromEntries(allPermissions.map((p) => [p.key, p.id]));
-
-  // ---- 3. Assign permissions to Mod role ----
-  console.log('📌 Assigning permissions to Mod role...');
-  const modRole = roleMap['Mod'];
-  if (modRole) {
-    const modPermissionIds = MOD_PERMISSION_KEYS
-      .map((key) => permMap[key])
-      .filter((id): id is number => id !== undefined);
+  // ---- 3. Assign permissions to roles ----
+  console.log('📌 Assigning permissions to roles...');
 
     if (modPermissionIds.length > 0) {
       await db
@@ -220,23 +212,23 @@ async function seed() {
     console.log('   ⚠ Mod role not found');
   }
 
-  // ---- 4. Assign default permissions to USER role ----
-  console.log('📌 Assigning default permissions to USER role...');
-  const userRole = roleMap['USER'];
-  if (userRole) {
-    const userPermissionIds = USER_DEFAULT_PERMISSION_KEYS
-      .map((key) => permMap[key])
-      .filter((id): id is number => id !== undefined);
+  const userRole = allRoles.find((r) => r.name === 'USER');
+  const modRole = allRoles.find((r) => r.name === 'Mod');
+  if (!userRole || !modRole) {
+    throw new Error('USER or Mod role not found after insert!');
+  }
 
-    if (userPermissionIds.length > 0) {
-      await db
-        .insert(rolePermissions)
-        .values(userPermissionIds.map((permId) => ({ roleId: userRole.id, permissionId: permId })))
-        .onConflictDoNothing();
-      console.log(`   ✓ ${userPermissionIds.length} default permissions assigned to USER`);
-    }
-  } else {
-    console.log('   ⚠ USER role not found');
+  // Assign profile:edit to USER role
+  const userPermissionIds = allPermissions
+    .filter((p) => USER_PERMISSION_KEYS.includes(p.key))
+    .map((p) => p.id);
+
+  if (userPermissionIds.length > 0) {
+    await db
+      .insert(rolePermissions)
+      .values(userPermissionIds.map((permId) => ({ roleId: userRole.id, permissionId: permId })))
+      .onConflictDoNothing();
+    console.log(`   ✓ ${userPermissionIds.length} permissions assigned to USER`);
   }
 
   // ---- 5. Assign permissions to SELLER role ----

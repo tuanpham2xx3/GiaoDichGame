@@ -27,7 +27,9 @@ export default function ProfilePage() {
     setError(''); setSuccess('');
     setLoading(true);
     try {
-      await api.patch('/v1/users/me', form);
+      const payload: Record<string, string> = { username: form.username };
+      if (form.avatarUrl.trim()) payload.avatarUrl = form.avatarUrl.trim();
+      await api.patch('/v1/users/me', payload);
       await refresh();
       setSuccess('Cập nhật hồ sơ thành công!');
     } catch (err) {
