@@ -5,7 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { JwtPayload } from '@giaodich/shared';
 
-export interface RefreshTokenPayload extends JwtPayload {
+export interface RefreshTokenPayload {
+  userId: number;
+  email: string;
   refreshToken: string;
 }
 
@@ -24,6 +26,6 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
     const authHeader = req.headers['authorization'];
     if (!authHeader) throw new UnauthorizedException();
     const refreshToken = authHeader.replace('Bearer ', '').trim();
-    return { ...payload, refreshToken };
+    return { userId: payload.sub, email: payload.email, refreshToken };
   }
 }

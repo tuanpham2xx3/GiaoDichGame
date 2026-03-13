@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -11,14 +11,22 @@ const inputClass = `w-full px-4 py-3 bg-[#0f1117] border border-white/[0.08] rou
   focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 transition-all`;
 
 export default function WithdrawPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState({ amountCoin: '', bankName: '', bankAccount: '', bankHolder: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  if (!user) { router.push('/login'); return null; }
+  useEffect(() => {
+    if (!isLoading && !user) router.push('/login');
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-10 h-10 border-2 border-white/10 border-t-indigo-500 rounded-full animate-spin" />
+    </div>
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

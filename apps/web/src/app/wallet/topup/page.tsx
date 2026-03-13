@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../lib/api';
@@ -24,7 +24,7 @@ interface BankInfoResponse {
 }
 
 export default function TopupPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('bank');
   const [amount, setAmount] = useState('');
@@ -33,7 +33,15 @@ export default function TopupPage() {
   const [error, setError] = useState('');
   const [bankInfo, setBankInfo] = useState<BankInfoResponse | null>(null);
 
-  if (!user) { router.push('/login'); return null; }
+  useEffect(() => {
+    if (!isLoading && !user) router.push('/login');
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-10 h-10 border-2 border-white/10 border-t-indigo-500 rounded-full animate-spin" />
+    </div>
+  );
 
   const handleBank = async (e: React.FormEvent) => {
     e.preventDefault();

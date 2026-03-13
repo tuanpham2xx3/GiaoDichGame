@@ -46,6 +46,11 @@ const SYSTEM_PERMISSIONS = [
   { key: 'profile:edit',       description: 'Chỉnh sửa thông tin cá nhân' },
 ] as const;
 
+// Permissions gán cho USER (quyền cơ bản)
+const USER_PERMISSION_KEYS = [
+  'profile:edit',
+];
+
 // Permissions gán cho Mod (không bao gồm quyền quản trị hệ thống)
 const MOD_PERMISSION_KEYS = [
   'game:manage',
@@ -78,16 +83,30 @@ async function seed() {
 
   console.log(`   ✓ ${insertedPermissions.length} permissions inserted (or already exist)`);
 
-  // ---- 3. Assign permissions to Mod role ----
-  console.log('📌 Assigning permissions to Mod role...');
+  // ---- 3. Assign permissions to roles ----
+  console.log('📌 Assigning permissions to roles...');
 
   // Fetch current state from DB
   const allRoles = await db.select().from(roles);
   const allPermissions = await db.select().from(permissions);
 
+  const userRole = allRoles.find((r) => r.name === 'USER');
   const modRole = allRoles.find((r) => r.name === 'Mod');
-  if (!modRole) {
-    throw new Error('Mod role not found after insert!');
+  if (!userRole || !modRole) {
+    throw new Error('USER or Mod role not found after insert!');
+  }
+
+  // Assign profile:edit to USER role
+  const userPermissionIds = allPermissions
+    .filter((p) => USER_PERMISSION_KEYS.includes(p.key))
+    .map((p) => p.id);
+
+  if (userPermissionIds.length > 0) {
+    await db
+      .insert(rolePermissions)
+      .values(userPermissionIds.map((permId) => ({ roleId: userRole.id, permissionId: permId })))
+      .onConflictDoNothing();
+    console.log(`   ✓ ${userPermissionIds.length} permissions assigned to USER`);
   }
 
   const modPermissionIds = allPermissions
