@@ -283,3 +283,151 @@ export const notificationsApi = {
     return data;
   },
 };
+
+// ============================================================
+// Disputes API
+// ============================================================
+
+export interface DisputeMessage {
+  id: number;
+  senderId: number;
+  message: string;
+  attachmentUrls: string[] | null;
+  createdAt: string;
+}
+
+export interface Dispute {
+  id: number;
+  orderId: number;
+  buyerId: number;
+  sellerId: number;
+  reason: string;
+  status: 'OPEN' | 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'WITHDRAWN';
+  resolution: 'REFUND' | 'RELEASE' | null;
+  resolutionNote: string | null;
+  sellerDeadline: string;
+  createdAt: string;
+  resolvedAt: string | null;
+  isBuyer?: boolean;
+  isSeller?: boolean;
+  isAdmin?: boolean;
+  order?: {
+    id: number;
+    listingTitle: string;
+    amount: string;
+    status: string;
+  };
+  messages?: DisputeMessage[];
+}
+
+export interface DisputesResponse {
+  data: Dispute[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export interface CreateDisputeDto {
+  orderId: string;
+  reason: 'account_not_received' | 'account_invalid' | 'account_not_as_described' | 'other';
+  description: string;
+}
+
+export interface SendMessageDto {
+  message: string;
+}
+
+export interface JudgeDisputeDto {
+  decision: 'REFUND' | 'RELEASE';
+  note?: string;
+}
+
+export interface DisputeStats {
+  total: number;
+  open: number;
+  underReview: number;
+  resolved: number;
+  refunded: number;
+  released: number;
+}
+
+export interface DisputeSettings {
+  auto_refund_hours: string;
+}
+
+export const disputesApi = {
+  // User endpoints
+  getDisputes: async (params?: { status?: string }) => {
+    const { data } = await api.get<Dispute[]>('/disputes', { params });
+    return data;
+  },
+  getDispute: async (id: number) => {
+    const { data } = await api.get<Dispute>(`/disputes/${id}`);
+    return data;
+  },
+  createDispute: async (payload: CreateDisputeDto) => {
+    const { data } = await api.post<Dispute>('/disputes', payload);
+    return data;
+  },
+  withdrawDispute: async (id: number, reason?: string) => {
+    const { data } = await api.post(`/disputes/${id}/withdraw`, { reason });
+    return data;
+  },
+  sendMessage: async (id: number, payload: SendMessageDto) => {
+    const { data } = await api.post<DisputeMessage>(`/disputes/${id}/messages`, payload);
+    return data;
+  },
+  getMessages: async (id: number) => {
+    const { data } = await api.get<DisputeMessage[]>(`/disputes/${id}/messages`);
+    return data;
+  },
+  uploadEvidence: async (id: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post(`/disputes/${id}/evidence`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  getEvidence: async (id: number) => {
+    const { data } = await api.get<Array<{
+      id: number;
+      uploadedBy: number;
+      fileName: string;
+      fileType: string;
+      fileSize: number;
+      filePath: string;
+      createdAt: string;
+    }>>(`/disputes/${id}/evidence`);
+    return data;
+  },
+
+  // Admin endpoints
+  getAllDisputes: async (params?: {
+    status?: string;
+    buyerId?: number;
+    sellerId?: number;
+    page?: number;
+    limit?: number;
+  }) => {
+    const { data } = await api.get<DisputesResponse>('/admin/disputes', { params });
+    return data;
+  },
+  getDisputeStats: async () => {
+    const { data } = await api.get<DisputeStats>('/admin/disputes/stats');
+    return data;
+  },
+  judgeDispute: async (id: number, payload: JudgeDisputeDto) => {
+    const { data } = await api.post<Dispute>(`/admin/disputes/${id}/judge`, payload);
+    return data;
+  },
+  getSettings: async () => {
+    const { data } = await api.get<DisputeSettings>('/admin/disputes/settings');
+    return data;
+  },
+  updateSettings: async (key: string, value: string) => {
+    const { data } = await api.post('/admin/disputes/settings', { key, value });
+    return data;
+  },
+};

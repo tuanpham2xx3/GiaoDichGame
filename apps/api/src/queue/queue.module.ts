@@ -2,8 +2,10 @@ import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import { QUEUE_NAMES } from '@giaodich/shared';
-// import { OrdersProcessor } from './processors/orders.processor';
+import { OrdersProcessor } from './processors/orders.processor';
+import { DisputesProcessor } from './processors/disputes.processor';
 import { OrdersModule } from '../orders/orders.module';
+import { DisputesModule } from '../disputes/disputes.module';
 
 @Global()
 @Module({
@@ -28,8 +30,9 @@ import { OrdersModule } from '../orders/orders.module';
     
     // Import OrdersModule to use OrdersService
     OrdersModule,
+    DisputesModule,
   ],
-  // providers: [OrdersProcessor],
+  providers: [OrdersProcessor, DisputesProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

@@ -105,6 +105,7 @@ export const walletTransactionTypeEnum = [
   'HOLD',
   'RELEASE',
   'SETTLE',
+  'REFUND',
   'INSURANCE_LOCK',
   'INSURANCE_UNLOCK',
   'VIP_PURCHASE',
@@ -294,6 +295,32 @@ export const disputeMessages = pgTable('dispute_messages', {
     .references(() => users.id),
   message: text('message'),
   attachmentUrls: jsonb('attachment_urls').$type<string[]>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// Dispute Settings (Admin Config)
+export const disputeSettings = pgTable('dispute_settings', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  key: varchar('key', { length: 50 }).notNull().unique(),
+  value: varchar('value', { length: 255 }).notNull(),
+  description: varchar('description', { length: 255 }),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedBy: bigint('updated_by', { mode: 'number' }).references(() => users.id),
+});
+
+// Dispute Evidence (Files)
+export const disputeEvidence = pgTable('dispute_evidence', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  ticketId: bigint('ticket_id', { mode: 'number' })
+    .notNull()
+    .references(() => disputeTickets.id, { onDelete: 'cascade' }),
+  uploadedBy: bigint('uploaded_by', { mode: 'number' })
+    .notNull()
+    .references(() => users.id),
+  filePath: varchar('file_path', { length: 500 }).notNull(),
+  fileName: varchar('file_name', { length: 255 }).notNull(),
+  fileType: varchar('file_type', { length: 50 }).notNull(),
+  fileSize: integer('file_size').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

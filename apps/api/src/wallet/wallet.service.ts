@@ -215,6 +215,49 @@ export class WalletService {
   }
 
   /**
+   * Refund coins to buyer - creates REFUND transaction
+   * Called when dispute is resolved with REFUND or auto-refund
+   */
+  async refundToBuyer(
+    buyerId: number,
+    amount: number,
+    orderId: number,
+  ) {
+    // Find the HOLD transaction for this order
+    const holdTx = await this.db
+      .select()
+      .from(schema.walletTransactions)
+      .where(
+        and(
+          eq(schema.walletTransactions.userId, buyerId),
+          eq(schema.walletTransactions.type, 'HOLD'),
+          eq(schema.walletTransactions.referenceId, orderId),
+          eq(schema.walletTransactions.status, 'SUCCESS'),
+        ),
+      );
+
+    if (holdTx.length === 0) {
+      throw new BadRequestException('No hold transaction found for this order');
+    }
+
+    // Create REFUND transaction (return the held amount to buyer)
+    const [tx] = await this.db
+      .insert(schema.walletTransactions)
+      .values({
+        userId: buyerId,
+        amount: amount.toString(),
+        type: 'REFUND',
+        status: 'SUCCESS',
+        referenceId: orderId,
+        referenceType: 'ORDER',
+        note: `Refund for order #${orderId} (dispute)`,
+      })
+      .returning();
+
+    return tx;
+  }
+
+  /**
    * Check if seller's insurance fund is sufficient for a new order
    */
   async checkInsuranceLimit(sellerId: number, orderAmount: number): Promise<boolean> {

@@ -15,6 +15,7 @@ export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 export const JOB_NAMES = {
   AUTO_COMPLETE: 'AUTO_COMPLETE',
   AUTO_REFUND: 'AUTO_REFUND',
+  DISPUTE_REMINDER: 'DISPUTE_REMINDER',
   VIP_EXPIRY: 'VIP_EXPIRY',
   PIN_EXPIRY: 'PIN_EXPIRY',
 } as const;

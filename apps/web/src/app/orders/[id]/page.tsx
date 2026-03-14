@@ -266,6 +266,16 @@ export default function OrderDetailPage() {
             {submitting ? 'Đang xác nhận...' : 'Xác nhận đã nhận hàng'}
           </button>
         )}
+
+        {/* Buyer: Open Dispute Button */}
+        {order.status === 'DELIVERED' && order.isBuyer && (
+          <button
+            onClick={() => router.push(`/disputes/create?orderId=${orderId}`)}
+            className="w-full px-4 py-3 mt-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Mở tranh chấp
+          </button>
+        )}
       </div>
     </div>
   );
