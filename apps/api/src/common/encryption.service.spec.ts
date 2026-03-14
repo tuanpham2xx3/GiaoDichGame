@@ -34,9 +34,9 @@ describe('EncryptionService', () => {
       expect(parts.length).toBe(3);
 
       // IV should be 32 hex chars (16 bytes)
-      expect(parts[0].length).toBe(32);
+      expect(parts[0]?.length).toBe(32);
       // Key should be 64 hex chars (32 bytes)
-      expect(parts[2].length).toBe(64);
+      expect(parts[2]?.length).toBe(64);
     });
 
     // ── ENC-002: Decrypt Game Info ───────────────────────────────────────────
@@ -158,7 +158,7 @@ describe('EncryptionService', () => {
       // Arrange - create valid encrypted data then truncate it
       const validEncrypted = service.encryptGameInfo({ test: 'data' });
       const truncatedParts = validEncrypted.split(':');
-      const truncated = `${truncatedParts[0]}:${truncatedParts[1].substring(0, 10)}`; // Missing key part
+      const truncated = `${truncatedParts[0]}:${truncatedParts[1]?.substring(0, 10)}`; // Missing key part
 
       // Act & Assert
       expect(() => service.decryptGameInfo(truncated)).toThrow();

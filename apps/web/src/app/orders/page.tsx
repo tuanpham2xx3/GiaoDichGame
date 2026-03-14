@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
-import { ordersApi, Order } from '../lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { ordersApi, Order } from '@/lib/api';
 
 export default function OrdersPage() {
   const { user, isLoading: authLoading } = useAuth();

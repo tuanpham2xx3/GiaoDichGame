@@ -294,12 +294,12 @@ async function seed() {
 
   // ---- 7. Create sample user for testing ----
   console.log('📌 Creating sample seller user...');
-  const existingUserArray = await db.select().from(schema.users).where(
+  const existingSellerArray = await db.select().from(schema.users).where(
     require('drizzle-orm').eq(schema.users.email, 'seller@giaodichgame.test')
   );
-  const existingUser = existingUserArray[0];
+  const existingSeller = existingSellerArray[0];
 
-  let sellerUserId = existingUser?.id;
+  let sellerUserId = existingSeller?.id;
 
   if (!sellerUserId) {
     const bcrypt = await import('bcrypt');
@@ -326,6 +326,65 @@ async function seed() {
     }
   } else {
     console.log(`   ✓ Seller user already exists (id: ${sellerUserId})`);
+  }
+
+  // ---- 7b. Create sample buyer user for testing ----
+  console.log('📌 Creating sample buyer user...');
+  const existingBuyerArray = await db.select().from(schema.users).where(
+    require('drizzle-orm').eq(schema.users.email, 'buyer@giaodich.com')
+  );
+  const existingBuyer = existingBuyerArray[0];
+
+  let buyerUserId = existingBuyer?.id;
+
+  if (!buyerUserId) {
+    const bcrypt = await import('bcrypt');
+    const hashedPassword = await bcrypt.hash('buyer123', 12);
+    const [buyerUser] = await db
+      .insert(schema.users)
+      .values({
+        email: 'buyer@giaodich.com',
+        passwordHash: hashedPassword,
+        username: 'BuyerTest',
+        isActive: true,
+      })
+      .returning();
+    buyerUserId = buyerUser.id;
+    console.log(`   ✓ Sample buyer user created (id: ${buyerUserId})`);
+
+    // Assign BUYER role
+    const buyerRole = roleMap['BUYER'];
+    if (buyerRole) {
+      await db
+        .insert(schema.userRoles)
+        .values({ userId: buyerUserId, roleId: buyerRole.id })
+        .onConflictDoNothing();
+      console.log(`   ✓ BUYER role assigned to user`);
+    }
+  } else {
+    console.log(`   ✓ Buyer user already exists (id: ${buyerUserId})`);
+  }
+
+  // ---- 7c. Add initial balance for buyer user ----
+  if (buyerUserId) {
+    console.log('📌 Adding initial balance for buyer user...');
+    const existingTransactions = await db.select().from(schema.walletTransactions).where(
+      require('drizzle-orm').eq(schema.walletTransactions.userId, buyerUserId)
+    );
+
+    if (existingTransactions.length === 0) {
+      // Add a TOPUP transaction with 5,000,000 VND balance
+      await db.insert(schema.walletTransactions).values({
+        userId: buyerUserId,
+        type: 'TOPUP',
+        amount: 5000000,
+        status: 'SUCCESS',
+        description: 'Initial balance for testing',
+      });
+      console.log(`   ✓ Initial balance (5,000,000 VND) added for buyer user`);
+    } else {
+      console.log(`   ✓ Buyer user already has transactions`);
+    }
   }
 
   // ---- 8. Insert Sample Listings ----

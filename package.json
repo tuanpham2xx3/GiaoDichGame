@@ -17,6 +17,7 @@
     "db:seed": "turbo run db:seed --filter=api"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",

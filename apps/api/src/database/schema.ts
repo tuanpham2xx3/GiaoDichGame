@@ -414,14 +414,6 @@ export const orderDeliveriesRelations = relations(orderDeliveries, ({ one }) => 
   order: one(orders, { fields: [orderDeliveries.orderId], references: [orders.id] }),
 }));
 
-export const ordersTimelineRelations = relations(orderTimeline, ({ one }) => ({
-  order: one(orders, { fields: [orderTimeline.orderId], references: [orders.id] }),
-}));
-
-export const notificationsRelations = relations(notifications, ({ one }) => ({
-  user: one(users, { fields: [notifications.userId], references: [users.id] }),
-}));
-
 // ================================================================
 // ORDER TIMELINE
 // ================================================================
@@ -453,4 +445,16 @@ export const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
   userIdx: index('idx_notifications_user').on(t.userId, t.isRead),
+}));
+
+// ================================================================
+// RELATIONS (moved after table definitions)
+// ================================================================
+
+export const ordersTimelineRelations = relations(orderTimeline, ({ one }) => ({
+  order: one(orders, { fields: [orderTimeline.orderId], references: [orders.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));

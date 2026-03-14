@@ -1,4 +1,4 @@
-import { Processor, Process } from '@nestjs/bullmq';
+import { Processor } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { OrdersService } from '../../orders/orders.service';
 import { QUEUE_NAMES, JOB_NAMES } from '@giaodich/shared';
@@ -7,7 +7,7 @@ import { QUEUE_NAMES, JOB_NAMES } from '@giaodich/shared';
 export class OrdersProcessor {
   constructor(private readonly ordersService: OrdersService) {}
 
-  @Process(JOB_NAMES.AUTO_COMPLETE)
+  // Handle auto-complete job
   async handleAutoComplete(job: Job<{ orderId: number }>) {
     const { orderId } = job.data;
 
@@ -15,7 +15,7 @@ export class OrdersProcessor {
       await this.ordersService.autoCompleteOrder(orderId);
     } catch (error) {
       console.error(`Failed to auto-complete order ${orderId}:`, error);
-      throw error; // Let BullMQ handle retry
+      throw error;
     }
   }
 }

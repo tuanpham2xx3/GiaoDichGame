@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../contexts/AuthContext';
-import { api } from '../../../lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import { AxiosError } from 'axios';
 
 const inputClass = `w-full px-4 py-3 bg-[#0f1117] border border-white/[0.08] rounded-xl text-white placeholder-white/20 text-sm

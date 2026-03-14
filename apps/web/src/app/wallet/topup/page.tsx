@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../contexts/AuthContext';
-import { api } from '../../../lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
 import { AxiosError } from 'axios';
 
 type Tab = 'bank' | 'gateway';

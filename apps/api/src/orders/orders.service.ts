@@ -73,7 +73,7 @@ export class OrdersService {
     // Note: In production, use proper transaction. Here we rely on wallet service methods.
     const [order] = await this.db.transaction(async (tx) => {
       // Hold coins from buyer
-      const holdTx = await this.walletService.holdCoins(tx, buyerId, price, 0);
+      const holdTx = await this.walletService.holdCoins(tx, { userId: buyerId, amount: price, orderId: 0 });
 
       // Update listing status to LOCKED
       await tx
@@ -98,13 +98,13 @@ export class OrdersService {
       await tx
         .update(orders)
         .set({})
-        .where(eq(orders.id, newOrder.id));
+        .where(eq(orders.id, newOrder!.id));
 
       // Add timeline entry
       await tx
         .insert(orderTimeline)
         .values({
-          orderId: newOrder.id,
+          orderId: newOrder!.id,
           status: ORDER_STATUS.LOCKED,
           note: 'Order created, buyer deposited coins',
         });
@@ -115,13 +115,13 @@ export class OrdersService {
     // 4. Schedule BullMQ job for auto-complete
     const job = await this.ordersQueue.add(
       JOB_NAMES.AUTO_COMPLETE,
-      { orderId: order.id },
+      { orderId: order!.id },
       {
         delay: 72 * 60 * 60 * 1000, // 72 hours in ms
         attempts: 3,
         backoff: {
           type: 'exponential',
-          firstDelay: 60000, // 1 minute
+          delay: 60000, // 1 minute
         },
       },
     );
@@ -130,18 +130,18 @@ export class OrdersService {
     await this.db
       .update(orders)
       .set({ bullmqJobId: job.id })
-      .where(eq(orders.id, order.id));
+      .where(eq(orders.id, order!.id));
 
     // 5. Notify seller
     await this.notificationsService.create({
-      userId: Number(order.sellerId),
+      userId: Number(order!.sellerId),
       type: 'ORDER_CREATED',
       title: 'Đơn hàng mới',
-      content: `Bạn có đơn hàng mới #${order.id}`,
-      data: { orderId: order.id },
+      content: `Bạn có đơn hàng mới #${order!.id}`,
+      data: { orderId: order!.id },
     });
 
-    return this.getOrderById(order.id, buyerId);
+    return this.getOrderById(order!.id, buyerId);
   }
 
   async getOrders(userId: number) {
@@ -268,7 +268,7 @@ export class OrdersService {
 
     // Notify buyer
     await this.notificationsService.create({
-      userId: Number(order.buyerId),
+      userId: Number(order!.buyerId),
       type: 'ORDER_DELIVERED',
       title: 'Đơn hàng đã giao',
       content: `Thông tin tài khoản game cho đơn hàng #${orderId} đã sẵn sàng`,
@@ -301,7 +301,7 @@ export class OrdersService {
     await this.db.transaction(async (tx) => {
       // Release hold (return to buyer - actually this is just moving from HOLD to processed)
       // Then settle to seller
-      await this.walletService.settleToSeller(tx, Number(order.sellerId), amount, orderId);
+      await this.walletService.settleToSeller(tx, { sellerId: Number(order.sellerId), amount, orderId });
 
       // Update order status
       await tx
@@ -376,7 +376,7 @@ export class OrdersService {
 
     await this.db.transaction(async (tx) => {
       // Settle to seller
-      await this.walletService.settleToSeller(tx, Number(order.sellerId), amount, orderId);
+      await this.walletService.settleToSeller(tx, { sellerId: Number(order.sellerId), amount, orderId });
 
       // Update order status
       await tx

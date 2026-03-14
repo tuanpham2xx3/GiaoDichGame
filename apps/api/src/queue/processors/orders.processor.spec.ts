@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersProcessor } from './orders.processor';
 import { OrdersService } from '../../orders/orders.service';
 import { JOB_NAMES } from '@giaodich/shared';
+import { Job } from 'bullmq';
 
 describe('OrdersProcessor', () => {
   let processor: OrdersProcessor;
@@ -148,11 +149,11 @@ describe('OrdersProcessor', () => {
       // Arrange
       ordersService.autoCompleteOrder.mockResolvedValue(undefined);
 
-      const jobs = [
-        { data: { orderId: 1 }, id: 'job-1' },
-        { data: { orderId: 2 }, id: 'job-2' },
-        { data: { orderId: 3 }, id: 'job-3' },
-      ] as any;
+      const jobs: Job<{ orderId: number }>[] = [
+        { data: { orderId: 1 }, id: 'job-1' } as Job<{ orderId: number }>,
+        { data: { orderId: 2 }, id: 'job-2' } as Job<{ orderId: number }>,
+        { data: { orderId: 3 }, id: 'job-3' } as Job<{ orderId: number }>,
+      ];
 
       // Act
       await Promise.all(jobs.map(job => processor.handleAutoComplete(job)));

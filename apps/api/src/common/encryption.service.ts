@@ -33,14 +33,14 @@ export class EncryptionService {
       throw new Error('Invalid encrypted data format');
     }
 
-    const [ivHex, encrypted, keyHex] = parts;
-    const iv = Buffer.from(ivHex, 'hex');
-    const key = Buffer.from(keyHex, 'hex');
+    const [ivHex, encrypted, keyHex] = parts as [string, string, string];
+    const iv = Buffer.from(ivHex!, 'hex');
+    const key = Buffer.from(keyHex!, 'hex');
 
     const decipher = createDecipheriv(this.algorithm, key, iv);
 
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    let decrypted = decipher.update(encrypted!, 'hex', 'utf8');
+    decrypted += decipher.final('utf8') as string;
 
     return JSON.parse(decrypted);
   }
