@@ -3,18 +3,18 @@ import { IsString, IsNotEmpty, IsEnum, IsOptional, MinLength, MaxLength } from '
 export class CreateDisputeDto {
   @IsNotEmpty()
   @IsString()
-  orderId: string;
+  orderId!: string;
 
   @IsNotEmpty()
   @IsString()
   @IsEnum(['account_not_received', 'account_invalid', 'account_not_as_described', 'other'])
-  reason: string;
+  reason!: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(20, { message: 'Description must be at least 20 characters' })
   @MaxLength(2000, { message: 'Description must not exceed 2000 characters' })
-  description: string;
+  description!: string;
 }
 
 export class SendMessageDto {
@@ -22,14 +22,14 @@ export class SendMessageDto {
   @IsString()
   @MinLength(1)
   @MaxLength(2000)
-  message: string;
+  message!: string;
 }
 
 export class JudgeDisputeDto {
   @IsNotEmpty()
   @IsString()
   @IsEnum(['REFUND', 'RELEASE'])
-  decision: 'REFUND' | 'RELEASE';
+  decision!: 'REFUND' | 'RELEASE';
 
   @IsOptional()
   @IsString()
@@ -47,9 +47,9 @@ export class WithdrawDisputeDto {
 export class UpdateSettingsDto {
   @IsNotEmpty()
   @IsString()
-  key: string;
+  key!: string;
 
   @IsNotEmpty()
   @IsString()
-  value: string;
+  value!: string;
 }

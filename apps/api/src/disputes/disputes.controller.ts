@@ -14,10 +14,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DisputesService } from './disputes.service';
 import { CreateDisputeDto, SendMessageDto, WithdrawDisputeDto } from './dto/dispute.dto';
-import { AuthGuard } from '../auth/auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('api/disputes')
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 export class DisputesController {
   constructor(private readonly disputesService: DisputesService) {}
 

@@ -4,8 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { QUEUE_NAMES } from '@giaodich/shared';
 import { OrdersProcessor } from './processors/orders.processor';
 import { DisputesProcessor } from './processors/disputes.processor';
+import { PremiumProcessor } from './processors/premium.processor';
 import { OrdersModule } from '../orders/orders.module';
 import { DisputesModule } from '../disputes/disputes.module';
+import { VipModule } from '../vip/vip.module';
+import { PinModule } from '../pin/pin.module';
 
 @Global()
 @Module({
@@ -31,8 +34,10 @@ import { DisputesModule } from '../disputes/disputes.module';
     // Import OrdersModule to use OrdersService
     OrdersModule,
     DisputesModule,
+    VipModule,
+    PinModule,
   ],
-  providers: [OrdersProcessor, DisputesProcessor],
+  providers: [OrdersProcessor, DisputesProcessor, PremiumProcessor],
   exports: [BullModule],
 })
 export class QueueModule {}

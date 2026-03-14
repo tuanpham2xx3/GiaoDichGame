@@ -111,6 +111,10 @@ export class DisputesService {
       })
       .returning();
 
+    if (!dispute) {
+      throw new Error('Failed to create dispute');
+    }
+
     // 7. Add initial message with description
     await this.db.insert(disputeMessages).values({
       ticketId: dispute.id,
@@ -275,13 +279,7 @@ export class DisputesService {
             status: order.status,
           }
         : null,
-      messages: dispute.messages.map((m) => ({
-        id: m.id,
-        senderId: Number(m.senderId),
-        message: m.message,
-        attachmentUrls: m.attachmentUrls,
-        createdAt: m.createdAt,
-      })),
+      messages: [],
     };
   }
 
@@ -331,6 +329,10 @@ export class DisputesService {
         message: dto.message,
       })
       .returning();
+
+    if (!message) {
+      throw new Error('Failed to send message');
+    }
 
     // Update dispute status if needed
     if (dispute.status === DISPUTE_STATUS.OPEN) {
@@ -476,7 +478,7 @@ export class DisputesService {
       .orderBy(disputeMessages.createdAt)
       .limit(1);
 
-    if (firstMessage.length > 0) {
+    if (firstMessage.length > 0 && firstMessage[0]) {
       const existingUrls = firstMessage[0].attachmentUrls || [];
       await this.db
         .update(disputeMessages)
@@ -607,7 +609,9 @@ export class DisputesService {
       );
     } else {
       // Settle to seller
+      const db = this.db as any;
       await this.walletService.settleToSeller(
+        db,
         { sellerId: Number(order.sellerId), amount: parseFloat(order.amount), orderId: Number(dispute.orderId) }
       );
     }
@@ -767,7 +771,7 @@ export class DisputesService {
         .from(disputeSettings)
         .where(eq(disputeSettings.key, 'auto_refund_hours'));
 
-      if (settings.length > 0) {
+      if (settings.length > 0 && settings[0]) {
         return {
           ...defaultSettings,
           auto_refund_hours: settings[0].value,

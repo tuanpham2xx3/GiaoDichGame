@@ -352,6 +352,22 @@ export const userVipSubscriptions = pgTable('user_vip_subscriptions', {
   isActive: boolean('is_active').notNull().default(true),
 });
 
+export const userProfiles = pgTable('user_profiles', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  userId: bigint('user_id', { mode: 'number' })
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  displayName: varchar('display_name', { length: 100 }),
+  avatarUrl: varchar('avatar_url', { length: 500 }),
+  nameColor: varchar('name_color', { length: 7 }).default('#000000'),
+  bio: text('bio'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (t) => ({
+  userIdx: index('idx_user_profiles_user').on(t.userId),
+}));
+
 export const pinConfig = pgTable('pin_config', {
   id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   pricePerDay: decimal('price_per_day', { precision: 15, scale: 2 }).notNull(),
@@ -380,12 +396,14 @@ export const listingPins = pgTable('listing_pins', {
 // RELATIONS (for Drizzle query API)
 // ================================================================
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   userRoles: many(userRoles),
   walletTransactions: many(walletTransactions),
   listings: many(listings),
   orders: many(orders),
   notifications: many(notifications),
+  profile: one(userProfiles),
+  vipSubscriptions: many(userVipSubscriptions),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -427,6 +445,19 @@ export const listingImagesRelations = relations(listingImages, ({ one }) => ({
 
 export const listingPinsRelations = relations(listingPins, ({ one }) => ({
   listing: one(listings, { fields: [listingPins.listingId], references: [listings.id] }),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(users, { fields: [userProfiles.userId], references: [users.id] }),
+}));
+
+export const vipPackagesRelations = relations(vipPackages, ({ many }) => ({
+  subscriptions: many(userVipSubscriptions),
+}));
+
+export const userVipSubscriptionsRelations = relations(userVipSubscriptions, ({ one }) => ({
+  user: one(users, { fields: [userVipSubscriptions.userId], references: [users.id] }),
+  package: one(vipPackages, { fields: [userVipSubscriptions.packageId], references: [vipPackages.id] }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({

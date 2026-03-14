@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../contexts/AuthContext';
-import { disputesApi, DisputeSettings } from '../../../lib/api';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { disputesApi, DisputeSettings } from '../../../../lib/api';
 
 export default function AdminDisputesSettingsPage() {
   const { user, isLoading: authLoading } = useAuth();

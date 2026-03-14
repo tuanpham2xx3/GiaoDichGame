@@ -14,6 +14,9 @@ import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadModule } from './common/upload.module';
 import { DisputesModule } from './disputes/disputes.module';
+import { VipModule } from './vip/vip.module';
+import { PinModule } from './pin/pin.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -39,6 +42,9 @@ import { DisputesModule } from './disputes/disputes.module';
     NotificationsModule,
     UploadModule,
     DisputesModule,
+    VipModule,
+    PinModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

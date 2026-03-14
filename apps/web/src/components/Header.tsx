@@ -65,6 +65,14 @@ export function Header() {
               <Link href="/wallet" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">
                 Ví của tôi
               </Link>
+              <Link href="/vip" className="px-3 py-1.5 rounded-full text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition-all">
+                VIP
+              </Link>
+              {user.permissions?.some(p => p.startsWith('admin:') || ['user:manage', 'stats:view', 'dispute:resolve'].includes(p)) && (
+                <Link href="/admin/stats" className="px-3 py-1.5 rounded-full text-sm text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-all">
+                  Admin
+                </Link>
+              )}
               {user.permissions?.includes('listing:create') && (
                 <>
                   <Link href="/sell" className="px-3 py-1.5 rounded-full text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all">

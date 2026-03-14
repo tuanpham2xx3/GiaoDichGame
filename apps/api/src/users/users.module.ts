@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { VipModule } from '../vip/vip.module';
 
 @Module({
+  imports: [VipModule],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

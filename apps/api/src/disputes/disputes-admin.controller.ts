@@ -11,11 +11,11 @@ import {
 } from '@nestjs/common';
 import { DisputesService } from './disputes.service';
 import { JudgeDisputeDto, UpdateSettingsDto } from './dto/dispute.dto';
-import { AuthGuard } from '../auth/auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../common/guards/permissions.guard';
 
 @Controller('api/admin/disputes')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class DisputesAdminController {
   constructor(private readonly disputesService: DisputesService) {}
 

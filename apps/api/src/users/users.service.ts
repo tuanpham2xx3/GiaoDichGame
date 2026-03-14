@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import * as schema from '../database/schema';
@@ -183,5 +183,72 @@ export class UsersService {
       userId,
       roleId: userRole.id,
     }).onConflictDoNothing();
+  }
+
+  // ========== User Profile (VIP Benefit) ==========
+
+  async getProfile(userId: number): Promise<typeof schema.userProfiles.$inferSelect | undefined> {
+    return this.db.query.userProfiles.findFirst({
+      where: eq(schema.userProfiles.userId, userId),
+    });
+  }
+
+  async createOrUpdateProfile(userId: number, data: {
+    displayName?: string;
+    avatarUrl?: string;
+    nameColor?: string;
+    bio?: string;
+  }): Promise<typeof schema.userProfiles.$inferSelect> {
+    const existing = await this.getProfile(userId);
+
+    if (existing) {
+      const [updated] = await this.db.update(schema.userProfiles)
+        .set({
+          ...(data.displayName !== undefined && { displayName: data.displayName }),
+          ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+          ...(data.nameColor !== undefined && { nameColor: data.nameColor }),
+          ...(data.bio !== undefined && { bio: data.bio }),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.userProfiles.userId, userId))
+        .returning();
+      if (!updated) {
+        throw new Error('Failed to update profile');
+      }
+      return updated;
+    } else {
+      const [created] = await this.db.insert(schema.userProfiles).values({
+        userId,
+        displayName: data.displayName,
+        avatarUrl: data.avatarUrl,
+        nameColor: data.nameColor || '#000000',
+        bio: data.bio,
+      }).returning();
+      if (!created) {
+        throw new Error('Failed to create profile');
+      }
+      return created;
+    }
+  }
+
+  async getUserPublicProfile(userId: number): Promise<{
+    user: { id: number; username: string; avatarUrl: string | null };
+    profile?: { displayName: string | null; nameColor: string | null; bio: string | null };
+  }> {
+    const user = await this.findById(userId);
+    const profile = await this.getProfile(userId);
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        avatarUrl: profile?.avatarUrl || user.avatarUrl,
+      },
+      profile: profile ? {
+        displayName: profile.displayName,
+        nameColor: profile.nameColor,
+        bio: profile.bio,
+      } : undefined,
+    };
   }
 }
