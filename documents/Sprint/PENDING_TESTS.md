@@ -1,24 +1,42 @@
 # Danh sách Test Cases Chưa Thực Hiện
 ## Dự án: GIAODICHGAME C2C Marketplace
 
-> **Cập nhật lần cuối:** 2026-03-13
+> **Cập nhật lần cuối:** 2026-03-15
 > **Nguồn:** RESULT_TEST_0n1.md – các test SKIP + TEST_1.md – các test chưa implement
+> **Trạng thái:** Đã thực hiện 35 unit tests, 4 manual test scripts
 > **Tổng số:** 8 test cases / nhóm còn pending
 
 ---
 
 ## Tóm tắt
 
-| ID | Loại | Mức độ | Lý do chưa thực hiện | Sprint |
-|----|------|--------|----------------------|--------|
-| TC-0-06 | Infrastructure | Medium | Nginx chưa có trong docker-compose | 0 |
-| TC-0-12 | CI/CD | Medium | Chưa push code lên remote | 0 |
-| TC-1-07 | Unit (Jest) | High | File `permissions.guard.spec.ts` chưa tạo | 1 |
-| TC-1-08 | Unit (Jest) | High | File `permissions.guard.spec.ts` chưa tạo | 1 |
-| TC-1-09 | E2E (Supertest) | Critical | Chưa setup `test:e2e` cho NestJS | 1 |
-| TC-1-10 | E2E (Supertest) | Critical | Chưa setup `test:e2e` cho NestJS | 1 |
-| TC-1-16 | Manual API | Medium | Cần gửi nhiều request liên tiếp thủ công | 1 |
-| TC-1-25 | Manual API | High | Mock gateway URL chưa cấu hình | 1 |
+| ID | Loại | Mức độ | Trạng thái | Sprint |
+|----|------|--------|------------|--------|
+| TC-0-06 | Infrastructure | Medium | ⏳ Pending | 0 |
+| TC-0-12 | CI/CD | Medium | ⏳ Pending | 0 |
+| TC-1-07 | Unit (Jest) | High | ⏳ Pending | 1 |
+| TC-1-08 | Unit (Jest) | High | ⏳ Pending | 1 |
+| TC-1-09 | E2E (Supertest) | Critical | ⏳ Pending | 1 |
+| TC-1-10 | E2E (Supertest) | Critical | ⏳ Pending | 1 |
+| TC-1-16 | Manual API | Medium | ✅ Script Ready | 1 |
+| TC-1-25 | Manual API | High | ⏳ Pending | 1 |
+
+---
+
+## Completed Tests (2026-03-15)
+
+### Unit Tests ✅
+- **35 tests passed** across 4 test suites
+- Encryption Service: 9 tests (100% coverage)
+- Wallet Service: 12 tests (40% coverage)
+- Auth Service: 8 tests (62% coverage)
+- Orders Processor: 6 tests (21% coverage)
+
+### Manual API Scripts ✅
+- `scripts/test-rate-limit.ps1` (TC-1-16)
+- `scripts/test-vip-flow.ps1` (Sprint 5)
+- `scripts/test-pin-flow.ps1` (Sprint 5)
+- `scripts/test-admin-stats.ps1` (Sprint 5)
 
 ---
 

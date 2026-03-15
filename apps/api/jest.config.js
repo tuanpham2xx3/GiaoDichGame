@@ -24,9 +24,14 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    'src/wallet/wallet.service.spec.ts',
+    // Skip orders service spec - needs BullMQ mock fix (same pattern as others)
     'src/orders/orders.service.spec.ts',
-    'src/queue/processors/orders.processor.spec.ts',
-    'src/auth/auth.service.spec.ts',
+  ],
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/node_modules/**',
+    '!**/dist/**',
+    '!**/*.spec.ts',
+    '!**/*.d.ts',
   ],
 };
