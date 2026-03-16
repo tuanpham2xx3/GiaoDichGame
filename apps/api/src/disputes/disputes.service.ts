@@ -52,7 +52,7 @@ export class DisputesService {
     private readonly notificationsService: NotificationsService,
     @InjectQueue(QUEUE_NAMES.DISPUTES)
     private readonly disputesQueue: Queue,
-  ) {}
+  ) { }
 
   async createDispute(dto: CreateDisputeDto, buyerId: number) {
     const orderId = parseInt(dto.orderId);
@@ -273,11 +273,11 @@ export class DisputesService {
       isAdmin,
       order: order
         ? {
-            id: order.id,
-            listingTitle: order.listing?.title,
-            amount: order.amount,
-            status: order.status,
-          }
+          id: order.id,
+          listingTitle: order.listing?.title,
+          amount: order.amount,
+          status: order.status,
+        }
         : null,
       messages: [],
     };
@@ -803,6 +803,154 @@ export class DisputesService {
       });
 
     return { success: true, key, value };
+  }
+
+  // ========== Admin: Resolve Dispute ==========
+
+  async resolveDispute(disputeId: number, dto: JudgeDisputeDto, adminId: number) {
+    const dispute = await this.db.query.disputeTickets.findFirst({
+      where: eq(disputeTickets.id, disputeId),
+    });
+
+    if (!dispute) {
+      throw new NotFoundException('Dispute not found');
+    }
+
+    // Get order for wallet operations
+    const order = await this.db.query.orders.findFirst({
+      where: eq(orders.id, Number(dispute.orderId)),
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Perform wallet operations based on decision
+    if (dto.resolution === 'REFUND') {
+      // Release hold back to buyer
+      await this.walletService.refundToBuyer(
+        Number(order.buyerId),
+        parseFloat(order.amount),
+        Number(dispute.orderId),
+      );
+    } else if (dto.resolution === 'RELEASE') {
+      // Settle to seller
+      const db = this.db as any;
+      await this.walletService.settleToSeller(
+        db,
+        { sellerId: Number(order.sellerId), amount: parseFloat(order.amount), orderId: Number(dispute.orderId) }
+      );
+    }
+
+    // Update dispute status
+    await this.db
+      .update(disputeTickets)
+      .set({
+        status: DISPUTE_STATUS.RESOLVED,
+        resolution: dto.resolution,
+        resolutionNote: dto.resolutionNote || null,
+        resolvedAt: new Date(),
+        assignedTo: adminId,
+      })
+      .where(eq(disputeTickets.id, disputeId));
+
+    // Update order status
+    await this.db
+      .update(orders)
+      .set({
+        status: dto.resolution === 'REFUND' ? 'CANCELLED' : 'COMPLETED',
+        completedAt: dto.resolution === 'RELEASE' ? new Date() : null,
+      })
+      .where(eq(orders.id, Number(dispute.orderId)));
+
+    // Notify both parties
+    await this.notificationsService.create({
+      userId: Number(dispute.buyerId),
+      type: 'DISPUTE_RESOLVED',
+      title: 'Tranh chấp đã được giải quyết',
+      content: `Tranh chấp đơn hàng #${dispute.orderId} đã được giải quyết: ${dto.resolution === 'REFUND' ? 'Hoàn tiền' : 'Giải ngân'}`,
+      data: { disputeId, decision: dto.resolution },
+    });
+
+    await this.notificationsService.create({
+      userId: Number(dispute.sellerId),
+      type: 'DISPUTE_RESOLVED',
+      title: 'Tranh chấp đã được giải quyết',
+      content: `Tranh chấp đơn hàng #${dispute.orderId} đã được giải quyết: ${dto.resolution === 'REFUND' ? 'Hoàn tiền cho người mua' : 'Giải ngân cho bạn'}`,
+      data: { disputeId, decision: dto.resolution },
+    });
+
+    return this.getDisputeById(disputeId, adminId);
+  }
+
+  // ========== Auto Refund ==========
+
+  async handleAutoRefund(ticketId: number) {
+    const ticket = await this.db.query.disputeTickets.findFirst({
+      where: eq(disputeTickets.id, ticketId),
+      with: {
+        order: true,
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException('Dispute ticket not found');
+    }
+
+    // Check if seller has responded
+    const messages = await this.db.query.disputeMessages.findMany({
+      where: eq(disputeMessages.ticketId, ticketId),
+    });
+
+    if (messages.length > 0) {
+      // Seller responded, skip auto refund
+      return { skipped: true, reason: 'Seller responded' };
+    }
+
+    // Auto refund to buyer
+    await this.db.transaction(async (tx) => {
+      // Release hold to buyer (simplified - actual implementation would use walletService)
+      await tx.update(walletTransactions)
+        .set({ status: 'RELEASE' })
+        .where(
+          and(
+            eq(walletTransactions.type, 'HOLD'),
+            eq(walletTransactions.referenceId, ticket.orderId)
+          )
+        );
+
+      // Update dispute
+      await tx.update(disputeTickets)
+        .set({
+          status: DISPUTE_STATUS.RESOLVED,
+          resolution: 'AUTO_REFUND',
+          resolutionNote: 'Seller did not respond within deadline',
+          resolvedAt: new Date(),
+        })
+        .where(eq(disputeTickets.id, ticketId));
+
+      // Update order
+      await tx.update(orders)
+        .set({ status: 'CANCELLED' })
+        .where(eq(orders.id, ticket.orderId));
+
+      // Notify both parties
+      await this.notificationsService.create({
+        userId: Number(ticket.buyerId),
+        type: 'DISPUTE_AUTO_REFUND',
+        title: 'Bạn đã được hoàn tiền tự động',
+        content: 'Seller không phản hồi trong thời hạn',
+      });
+
+      await this.notificationsService.create({
+        userId: Number(ticket.sellerId),
+        type: 'DISPUTE_AUTO_REFUND',
+        title: 'Dispute đã được auto-refund',
+        content: 'Bạn không phản hồi trong thời hạn',
+      });
+    });
+
+    return { success: true, refunded: true };
   }
 
   // Auto refund (called by BullMQ)

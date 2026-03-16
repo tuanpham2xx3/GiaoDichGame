@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and, sql, desc, like, count } from 'drizzle-orm';
+import { eq, and, sql, desc, count } from 'drizzle-orm';
 import * as schema from '../database/schema';
 import { DRIZZLE } from '../database/database.module';
 
@@ -24,7 +24,7 @@ export interface UserListQuery {
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(DRIZZLE) private db: Db) {}
+  constructor(@Inject(DRIZZLE) private db: Db) { }
 
   // ========== Stats ==========
 
@@ -167,15 +167,111 @@ export class AdminService {
     };
   }
 
-  async banUser(userId: number): Promise<void> {
+  async banUser(userId: number): Promise<{ isActive: boolean }> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     await this.db.update(schema.users)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(schema.users.id, userId));
+
+    return { isActive: false };
   }
 
-  async unbanUser(userId: number): Promise<void> {
+  async unbanUser(userId: number): Promise<{ isActive: boolean }> {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     await this.db.update(schema.users)
       .set({ isActive: true, updatedAt: new Date() })
       .where(eq(schema.users.id, userId));
+
+    return { isActive: true };
+  }
+
+  // ========== User Roles ==========
+
+  async getUserRoles(userId: number) {
+    return this.db.query.userRoles.findMany({
+      where: eq(schema.userRoles.userId, userId),
+      with: {
+        role: true,
+      },
+    });
+  }
+
+  async assignRole(userId: number, roleId: number, adminId: number) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const [userRole] = await this.db.insert(schema.userRoles).values({
+      userId,
+      roleId,
+      assignedBy: adminId,
+    }).returning();
+
+    return userRole;
+  }
+
+  async removeRole(userId: number, roleId: number) {
+    await this.db.delete(schema.userRoles)
+      .where(
+        and(
+          eq(schema.userRoles.userId, userId),
+          eq(schema.userRoles.roleId, roleId)
+        )
+      );
+  }
+
+  // ========== Topup Management ==========
+
+  async getPendingTopups() {
+    return this.db.query.topupRequests.findMany({
+      where: eq(schema.topupRequests.status, 'PENDING'),
+      orderBy: [desc(schema.topupRequests.createdAt)],
+    });
+  }
+
+  async confirmTopup(id: number, adminId: number) {
+    const topup = await this.db.query.topupRequests.findFirst({
+      where: eq(schema.topupRequests.id, id),
+    });
+    if (!topup) {
+      throw new NotFoundException('Topup request not found');
+    }
+
+    return this.db.transaction(async (tx) => {
+      // Update topup status
+      await tx.update(schema.topupRequests)
+        .set({
+          status: 'SUCCESS',
+          confirmedBy: adminId,
+        })
+        .where(eq(schema.topupRequests.id, id));
+
+      // Credit user wallet
+      await tx.insert(schema.walletTransactions).values({
+        userId: topup.userId,
+        amount: topup.amountCoin,
+        type: 'TOPUP',
+        status: 'SUCCESS',
+        referenceId: id,
+        referenceType: 'topup_request',
+      });
+
+      return { success: true, status: 'SUCCESS' };
+    });
   }
 }

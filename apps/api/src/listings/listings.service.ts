@@ -10,7 +10,7 @@ export class ListingsService {
   constructor(
     @Inject(DRIZZLE)
     private readonly db: DrizzleDB,
-  ) {}
+  ) { }
 
   async createListing(dto: CreateListingDto, sellerId: number) {
     const game = await this.db.query.games.findFirst({
@@ -231,18 +231,44 @@ export class ListingsService {
     return { success: true, message: 'Listing deleted successfully' };
   }
 
-  async getMyListings(userId: number) {
+  async getMyListings(userId: number, query?: { page?: number; limit?: number }) {
+    const page = query?.page || 1;
+    const limit = query?.limit || 20;
+    const offset = (page - 1) * limit;
+
     const items = await this.db.query.listings.findMany({
       where: and(
         eq(listings.sellerId, userId),
         sql`status != 'DELETED'`
       ),
       orderBy: [desc(listings.createdAt)],
+      limit,
+      offset,
     });
 
-    return items.map((item: typeof items[number]) => ({
-      ...item,
-    }));
+    const [totalResult] = await this.db
+      .select({ count: count() })
+      .from(listings)
+      .where(and(
+        eq(listings.sellerId, userId),
+        sql`status != 'DELETED'`
+      ));
+
+    return {
+      items,
+      total: totalResult?.count ?? 0,
+      page,
+      limit,
+      totalPages: Math.ceil((totalResult?.count ?? 0) / limit),
+    };
+  }
+
+  async incrementViewCount(id: number) {
+    await this.db.update(listings)
+      .set({
+        viewCount: sql`${listings.viewCount} + 1`,
+      })
+      .where(eq(listings.id, id));
   }
 
   async getListingsByGame(gameId: number, limit = 10) {

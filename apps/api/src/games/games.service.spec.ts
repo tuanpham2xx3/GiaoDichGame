@@ -221,13 +221,15 @@ describe('GamesService', () => {
   describe('deleteGame', () => {
     it('GME-013: should delete game successfully', async () => {
       db.query.games.findFirst = jest.fn().mockResolvedValue(mockGame);
-      (db.delete as any).mockReturnValue({
-        where: jest.fn().mockResolvedValue({}),
+      db.update.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue({}),
+        }),
       });
 
       await service.deleteGame(1);
 
-      expect(db.delete).toHaveBeenCalled();
+      expect(db.update).toHaveBeenCalled();
     });
 
     it('GME-014: should throw NotFoundException when game not found', async () => {

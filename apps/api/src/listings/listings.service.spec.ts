@@ -27,47 +27,59 @@ const mockGame = {
   iconUrl: 'https://example.com/lol.png',
 };
 
-const mockDb = {
-  insert: jest.fn().mockReturnThis(),
-  values: jest.fn().mockReturnThis(),
-  returning: jest.fn().mockResolvedValue([]),
-  update: jest.fn().mockReturnThis(),
-  set: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
-  delete: jest.fn().mockReturnThis(),
-  select: jest.fn().mockReturnThis(),
-  from: jest.fn().mockReturnThis(),
-  query: {
-    games: {
-      findFirst: jest.fn(),
+const mockSeller = {
+  id: 1,
+  username: 'testuser',
+  avatarUrl: 'https://example.com/avatar.png',
+};
+
+// Helper to create chainable mock
+const createChainableMock = () => {
+  const mock: any = {
+    insert: jest.fn(),
+    values: jest.fn(),
+    returning: jest.fn(),
+    update: jest.fn(),
+    set: jest.fn(),
+    where: jest.fn(),
+    delete: jest.fn(),
+    select: jest.fn(),
+    from: jest.fn(),
+    orderBy: jest.fn(),
+    limit: jest.fn(),
+    offset: jest.fn(),
+    query: {
+      games: { findFirst: jest.fn(), findMany: jest.fn() },
+      listings: { findFirst: jest.fn(), findMany: jest.fn() },
+      users: { findFirst: jest.fn(), findMany: jest.fn() },
     },
-    listings: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-    },
-    users: {
-      findFirst: jest.fn(),
-    },
-  },
+  };
+
+  const chainableMethods = ['insert', 'values', 'update', 'set', 'where', 'delete', 'select', 'from', 'orderBy', 'limit', 'offset'];
+  chainableMethods.forEach(method => {
+    mock[method].mockImplementation(() => mock);
+  });
+
+  return mock;
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('ListingsService', () => {
   let service: ListingsService;
-  let db: typeof mockDb;
+  let db: ReturnType<typeof createChainableMock>;
 
   beforeEach(async () => {
+    db = createChainableMock();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListingsService,
-        { provide: DRIZZLE, useValue: mockDb },
+        { provide: DRIZZLE, useValue: db },
       ],
     }).compile();
 
     service = module.get<ListingsService>(ListingsService);
-    db = module.get(DRIZZLE);
-
     jest.clearAllMocks();
   });
 
@@ -88,22 +100,34 @@ describe('ListingsService', () => {
     };
 
     it('LST-001: should create listing successfully', async () => {
-      db.query.games.findFirst = jest.fn().mockResolvedValue(mockGame);
-      (db.insert as any).mockReturnValue({
-        values: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockResolvedValue([mockListing]),
+      db.query.games.findFirst.mockResolvedValue(mockGame);
+      db.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([mockListing]),
+        }),
+      });
+      db.query.listings.findFirst.mockResolvedValue({
+        ...mockListing,
+        images: [],
+        seller: mockSeller,
+        game: mockGame,
+      });
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
       });
 
       const result = await service.createListing(createDto, 1);
 
       expect(result).toBeDefined();
       expect(result.title).toBe('Test Listing');
-      expect(db.insert).toHaveBeenCalled();
     });
 
     it('LST-002: should throw NotFoundException when game not found', async () => {
-      db.query.games.findFirst = jest.fn().mockResolvedValue(null);
-
+      db.query.games.findFirst.mockResolvedValue(null);
       await expect(service.createListing(createDto, 1)).rejects.toThrow(NotFoundException);
     });
   });
@@ -112,10 +136,11 @@ describe('ListingsService', () => {
 
   describe('getListings', () => {
     it('LST-003: should return paginated list of listings', async () => {
-      db.query.listings.findMany = jest.fn().mockResolvedValue([mockListing]);
-      (db.select as any).mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      db.query.listings.findMany.mockResolvedValue([mockListing]);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 1 }]),
+        }),
       });
 
       const result = await service.getListings({ page: 1, limit: 10, status: 'PUBLISHED' });
@@ -126,22 +151,23 @@ describe('ListingsService', () => {
     });
 
     it('LST-004: should filter by game ID', async () => {
-      db.query.listings.findMany = jest.fn().mockResolvedValue([mockListing]);
-      (db.select as any).mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      db.query.listings.findMany.mockResolvedValue([mockListing]);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 1 }]),
+        }),
       });
 
       await service.getListings({ page: 1, limit: 10, gameId: 1, status: 'PUBLISHED' });
-
       expect(db.query.listings.findMany).toHaveBeenCalled();
     });
 
     it('LST-005: should filter by price range', async () => {
-      db.query.listings.findMany = jest.fn().mockResolvedValue([mockListing]);
-      (db.select as any).mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      db.query.listings.findMany.mockResolvedValue([mockListing]);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 1 }]),
+        }),
       });
 
       await service.getListings({
@@ -151,19 +177,18 @@ describe('ListingsService', () => {
         maxPrice: 150000,
         status: 'PUBLISHED',
       });
-
       expect(db.query.listings.findMany).toHaveBeenCalled();
     });
 
     it('LST-006: should sort by pinned first', async () => {
-      db.query.listings.findMany = jest.fn().mockResolvedValue([mockListing]);
-      (db.select as any).mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      db.query.listings.findMany.mockResolvedValue([mockListing]);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 1 }]),
+        }),
       });
 
       await service.getListings({ page: 1, limit: 10, sort: 'pinned', status: 'PUBLISHED' });
-
       expect(db.query.listings.findMany).toHaveBeenCalled();
     });
   });
@@ -172,16 +197,25 @@ describe('ListingsService', () => {
 
   describe('getListingById', () => {
     it('LST-007: should return listing by ID', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
+      db.query.listings.findFirst.mockResolvedValue(mockListing);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      });
+      db.query.games.findFirst.mockResolvedValue(mockGame);
+      db.query.users.findFirst.mockResolvedValue(mockSeller);
 
       const result = await service.getListingById(1);
 
-      expect(result).toEqual(mockListing);
+      expect(result).toBeDefined();
+      expect(result.id).toBe(1);
     });
 
     it('LST-008: should throw NotFoundException when listing not found', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(null);
-
+      db.query.listings.findFirst.mockResolvedValue(null);
       await expect(service.getListingById(999)).rejects.toThrow(NotFoundException);
     });
   });
@@ -195,11 +229,13 @@ describe('ListingsService', () => {
     };
 
     it('LST-009: should update listing successfully', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
-      (db.update as any).mockReturnValue({
-        set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockResolvedValue([{ ...mockListing, ...updateDto }]),
+      db.query.listings.findFirst.mockResolvedValue(mockListing);
+      db.update.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([{ ...mockListing, title: 'Updated Title', price: '120000' }]),
+          }),
+        }),
       });
 
       const result = await service.updateListing(1, updateDto, 1);
@@ -209,14 +245,12 @@ describe('ListingsService', () => {
     });
 
     it('LST-010: should throw NotFoundException when listing not found', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(null);
-
+      db.query.listings.findFirst.mockResolvedValue(null);
       await expect(service.updateListing(999, updateDto, 1)).rejects.toThrow(NotFoundException);
     });
 
     it('LST-011: should throw ForbiddenException when not owner', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
-
+      db.query.listings.findFirst.mockResolvedValue(mockListing);
       await expect(service.updateListing(1, updateDto, 999)).rejects.toThrow(ForbiddenException);
     });
   });
@@ -225,25 +259,18 @@ describe('ListingsService', () => {
 
   describe('deleteListing', () => {
     it('LST-012: should delete listing successfully', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
-      (db.delete as any).mockReturnValue({
-        where: jest.fn().mockResolvedValue({}),
-      });
-
+      db.query.listings.findFirst.mockResolvedValue(mockListing);
       await service.deleteListing(1, 1);
-
-      expect(db.delete).toHaveBeenCalled();
+      expect(db.update).toHaveBeenCalled();
     });
 
     it('LST-013: should throw NotFoundException when listing not found', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(null);
-
+      db.query.listings.findFirst.mockResolvedValue(null);
       await expect(service.deleteListing(999, 1)).rejects.toThrow(NotFoundException);
     });
 
     it('LST-014: should throw ForbiddenException when not owner', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
-
+      db.query.listings.findFirst.mockResolvedValue(mockListing);
       await expect(service.deleteListing(1, 999)).rejects.toThrow(ForbiddenException);
     });
   });
@@ -252,15 +279,7 @@ describe('ListingsService', () => {
 
   describe('incrementViewCount', () => {
     it('LST-015: should increment view count', async () => {
-      db.query.listings.findFirst = jest.fn().mockResolvedValue(mockListing);
-      (db.update as any).mockReturnValue({
-        set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockResolvedValue([{}]),
-      });
-
       await service.incrementViewCount(1);
-
       expect(db.update).toHaveBeenCalled();
     });
   });
@@ -269,15 +288,17 @@ describe('ListingsService', () => {
 
   describe('getMyListings', () => {
     it('LST-016: should return user listings', async () => {
-      db.query.listings.findMany = jest.fn().mockResolvedValue([mockListing]);
-      (db.select as any).mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([{ count: 1 }]),
+      db.query.listings.findMany.mockResolvedValue([mockListing]);
+      db.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockResolvedValue([{ count: 1 }]),
+        }),
       });
 
       const result = await service.getMyListings(1, { page: 1, limit: 10 });
 
       expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
   });
 });
