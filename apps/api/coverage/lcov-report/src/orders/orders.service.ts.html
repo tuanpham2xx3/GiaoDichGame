@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">13.13% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>13/99</span>
+                <span class='fraction'>0/99</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/54</span>
+                <span class='fraction'>0/54</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.45% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/96</span>
+                <span class='fraction'>0/96</span>
             </div>
         
             
@@ -480,19 +480,19 @@
 <a name='L415'></a><a href='#L415'>415</a>
 <a name='L416'></a><a href='#L416'>416</a>
 <a name='L417'></a><a href='#L417'>417</a>
-<a name='L418'></a><a href='#L418'>418</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L418'></a><a href='#L418'>418</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -514,7 +514,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -897,19 +897,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Inject } from '@nestjs/common';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { DRIZZLE } from '../database/database.module';
-import { orders, orderDeliveries, orderTimeline, listings } from '../database/schema';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Inject } from '@nestjs/common';</span>
+<span class="cstat-no" title="statement not covered" >import { eq, and, desc, sql } from 'drizzle-orm';</span>
+<span class="cstat-no" title="statement not covered" >import { DRIZZLE } from '../database/database.module';</span>
+<span class="cstat-no" title="statement not covered" >import { orders, orderDeliveries, orderTimeline, listings } from '../database/schema';</span>
 import type { DrizzleDB } from '../database/types';
-import { WalletService } from '../wallet/wallet.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { EncryptionService } from '../common/encryption.service';
-import { InjectQueue } from '@nestjs/bullmq';
+<span class="cstat-no" title="statement not covered" >import { WalletService } from '../wallet/wallet.service';</span>
+<span class="cstat-no" title="statement not covered" >import { NotificationsService } from '../notifications/notifications.service';</span>
+<span class="cstat-no" title="statement not covered" >import { EncryptionService } from '../common/encryption.service';</span>
+<span class="cstat-no" title="statement not covered" >import { InjectQueue } from '@nestjs/bullmq';</span>
 import type { Queue } from 'bullmq';
-import { QUEUE_NAMES, JOB_NAMES } from '@giaodich/shared';
+<span class="cstat-no" title="statement not covered" >import { QUEUE_NAMES, JOB_NAMES } from '@giaodich/shared';</span>
 &nbsp;
-export const ORDER_STATUS = {
+export const <span class="cstat-no" title="statement not covered" >ORDER_STATUS = {</span>
   PENDING: 'PENDING',
   LOCKED: 'LOCKED',
   DELIVERED: 'DELIVERED',
@@ -931,13 +931,13 @@ export interface DeliverOrderDto {
 }
 &nbsp;
 @Injectable()
-export class OrdersService {
+export <span class="cstat-no" title="statement not covered" >class <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >OrdersService </span>{</span></span>
 <span class="fstat-no" title="function not covered" >  constructor(</span>
     @Inject(DRIZZLE)
     private readonly <span class="cstat-no" title="statement not covered" >db: DrizzleDB,</span>
-    private readonly <span class="cstat-no" title="statement not covered" >walletService: W</span>alletService<span class="branch-1 cbranch-no" title="branch not covered" >,</span>
-    private readonly <span class="cstat-no" title="statement not covered" >notificationsService: N</span>otificationsService<span class="branch-1 cbranch-no" title="branch not covered" >,</span>
-    private readonly <span class="cstat-no" title="statement not covered" >encryptionService: E</span>ncryptionService<span class="branch-1 cbranch-no" title="branch not covered" >,</span>
+    private readonly <span class="cstat-no" title="statement not covered" >walletService: W</span>alletService,
+    private readonly <span class="cstat-no" title="statement not covered" >notificationsService: N</span>otificationsService,
+    private readonly <span class="cstat-no" title="statement not covered" >encryptionService: E</span>ncryptionService,
     @InjectQueue(QUEUE_NAMES.ORDERS)
     private readonly <span class="cstat-no" title="statement not covered" >ordersQueue: Queue,</span>
   ) {}
@@ -1321,7 +1321,7 @@ export class OrdersService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-15T05:25:43.817Z
+                at 2026-03-16T13:07:52.053Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
